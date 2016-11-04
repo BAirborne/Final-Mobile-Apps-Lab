@@ -30,6 +30,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationManager locationManager;
     Marker marker;
     LatLng defaultPos;
+    Location finish;
+    Marker finishMarker;
 
     private String bestProvider = null;
 
@@ -38,27 +40,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         public void onLocationChanged(Location location) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            String str = "Lat:" + latitude + "\nLong:" + longitude;
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
+            if (mMap != null) {
+                marker.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
+            }
+
+
+            if(finish != null){
+                finish.setAltitude(location.getAltitude());
+                Toast.makeText(MainActivity.this,""+location.distanceTo(finish),Toast.LENGTH_SHORT).show();
+                if(location.distanceTo(finish)<3){
+                    //TODO Won game stuff
+                    Toast.makeText(MainActivity.this,"You Won",Toast.LENGTH_SHORT).show();
+                }
+            }
             // locationManager.removeUpdates(MapsActivity.this);
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-            String str = "status changed to " + status + "!";
-            Toast.makeText(MainActivity.this, provider + str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            String str = "Provider " + provider + " enabled!";
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            String str = "Provider " + provider + " disabled!";
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -117,7 +124,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             System.out.println("Incorrect Permissions");
             return;
         }
-        locationManager.requestLocationUpdates(bestProvider, (long) 2000, 10f, locationListener);
+        locationManager.requestLocationUpdates(bestProvider, (long) 100, 2f, locationListener);
     }
 
     public void onPause() {
@@ -142,6 +149,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setIndoorEnabled(true);
         // Add a marker in Sydney and move the camera
 
-        marker = mMap.addMarker(new MarkerOptions().position(defaultPos).title("Default Position"));
+        marker = mMap.addMarker(new MarkerOptions().position(defaultPos).title("Player"));
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+            @Override
+            public void onMapClick(LatLng point) {
+                if(finishMarker==null) {
+                    finishMarker = mMap.addMarker(new MarkerOptions().position(point).title("Finish"));
+                    finish = new Location(bestProvider);
+                    finish.setLatitude(point.latitude);
+                    finish.setLongitude(point.longitude);
+                }else{
+                    finishMarker.setPosition(point);
+                    finish.setLatitude(point.latitude);
+                    finish.setLongitude(point.longitude);
+                }
+            }
+        });
     }
 }
