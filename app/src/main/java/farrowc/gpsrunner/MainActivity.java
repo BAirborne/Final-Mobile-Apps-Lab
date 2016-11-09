@@ -1,7 +1,5 @@
 package farrowc.gpsrunner;
 
-import android.*;
-import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
@@ -16,6 +14,7 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -34,6 +33,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationManager locationManager;
     Marker marker;
     LatLng defaultPos;
+    Location finish;
+    Marker finishMarker;
 
     private String bestProvider = null;
 
@@ -42,8 +43,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         public void onLocationChanged(Location location) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            String str = "Lat:" + latitude + "\nLong:" + longitude;
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
+            if (mMap != null) {
+                marker.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
+            }
+
+
+            if(finish != null){
+                finish.setAltitude(location.getAltitude());
+                Toast.makeText(MainActivity.this,""+location.distanceTo(finish),Toast.LENGTH_SHORT).show();
+                if(location.distanceTo(finish)<3){
+                    //TODO Won game stuff
+                    Toast.makeText(MainActivity.this,"You Won",Toast.LENGTH_SHORT).show();
+                }
+            }
             // locationManager.removeUpdates(MapsActivity.this);
         }
 
@@ -73,7 +85,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
         //	obtain	reference	to	LocationManager
         String svcName = Context.LOCATION_SERVICE;
         locationManager = (LocationManager) getSystemService(svcName);
@@ -86,86 +97,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         criteria.setSpeedRequired(false);
         criteria.setCostAllowed(true);
 
-
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-                String str = "Explanation needed: Please I need to determine your location";
-                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
-            } else {
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_READ_LOCATION);
-                String str = "No explanation needed: thanks.";
-                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
-            }
+        //	Obtain	reference	to	location	provider
+        List<String> providers = locationManager.getProviders(true);
+        bestProvider = providers.get(1);
+        Location l = locationManager.getLastKnownLocation(bestProvider);
+        Location bestLocation = l;
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
         }
-
-        Location bestLocation = null;
-
-        try
-        {
-            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-            // getting GPS status
-            boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            Log.d("GPS", "GPS is enabled - " + isGPSEnabled);
-
-            // getting network status
-            boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-            Log.d("Network", "Network is enabled - " + isGPSEnabled);
-
-            if (!isGPSEnabled && !isNetworkEnabled)
-            {
-                Log.d("Provider", "Network is enabled - " + isGPSEnabled);
-            }
-            else
-            {
-                boolean canGetLocation = true;
-                if (isNetworkEnabled)
-                {
-                    bestProvider = LocationManager.NETWORK_PROVIDER;
-                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, (long) 100, 4f, locationListener);
-                    Log.d("Provider", "Starting Network listener");
-                    if (locationManager != null)
-                    {
-                        bestLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                        if (bestLocation != null)
-                        {
-                            defaultPos = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
-                        }
-                    }
-                }
-                // if GPS Enabled get lat/long using GPS Services
-                if (isGPSEnabled)
-                {
-                    if (bestLocation == null)
-                    {
-                        bestProvider = LocationManager.GPS_PROVIDER;
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, (long) 100, 4f, locationListener);
-                        Log.d("GPS Enabled", "GPS Enabled");
-                        if (locationManager != null)
-                        {
-                            bestLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if (bestLocation != null)
-                            {
-                                defaultPos = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        locationManager.requestLocationUpdates(bestProvider, (long) 100, 4f, locationListener);
+        defaultPos = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
     }
 
 
@@ -175,35 +123,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
         if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
                 String str = "Explanation needed: Please I need to determine your location";
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
             } else {
                 // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_READ_LOCATION);
-                String str = "No explanation needed: thanks.";
-                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                String str = "Explanation needed: Please I need to determine your location";
-                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
-            } else {
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_READ_LOCATION);
                 String str = "No explanation needed: thanks.";
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
@@ -216,23 +146,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void onPause() {
         super.onPause();
         if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
                 String str = "Explanation needed: Please I need to determine your location";
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
             } else {
                 // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_READ_LOCATION);
                 String str = "No explanation needed: thanks.";
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
             }
         }
-
         locationManager.removeUpdates(locationListener);
     }
 
@@ -246,11 +175,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
         mMap.getUiSettings().setRotateGesturesEnabled(true);
-        mMap.getUiSettings().setIndoorLevelPickerEnabled(true);
 
         if (defaultPos != null) {
-            mMap.addMarker(new MarkerOptions().position(defaultPos).title("Default Position"));
+            marker = mMap.addMarker(new MarkerOptions().position(defaultPos).title("Player"));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(defaultPos));
         }
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+            @Override
+            public void onMapClick(LatLng point) {
+                if(finishMarker==null) {
+                    finishMarker = mMap.addMarker(new MarkerOptions().position(point).title("Finish"));
+                    finish = new Location(bestProvider);
+                    finish.setLatitude(point.latitude);
+                    finish.setLongitude(point.longitude);
+                }else{
+                    finishMarker.setPosition(point);
+                    finish.setLatitude(point.latitude);
+                    finish.setLongitude(point.longitude);
+                }
+            }
+        });
     }
 }
