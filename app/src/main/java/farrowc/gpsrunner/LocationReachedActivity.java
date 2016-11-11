@@ -42,11 +42,11 @@ public class LocationReachedActivity extends AppCompatActivity {
             highScoresDataSource.updateHighScore(highScores);
         }
 
-        ((TextView)findViewById(R.id.timeElapsed)).setText("Time Taken: "+timeElapsed/1000+" s");
-        ((TextView)findViewById(R.id.distanceTravelled)).setText("Distance Travelled: "+distanceTravelled+" ft");
-        ((TextView)findViewById(R.id.minimumDistance)).setText("Minimum Distance: "+minimumDistance+" ft");
-        ((TextView)findViewById(R.id.highDistance)).setText("Highest Distance Travelled: "+highScores.getDistance()+" ft");
-        ((TextView)findViewById(R.id.highTime)).setText("Time of Highest Distance: "+highScores.getTime()+" s");
+        ((TextView)findViewById(R.id.timeElapsed)).setText("Time Taken: "+timeElapsed/1000000+" s");
+        ((TextView)findViewById(R.id.distanceTravelled)).setText("Distance Travelled: "+(long)distanceTravelled+" ft");
+        ((TextView)findViewById(R.id.minimumDistance)).setText("Minimum Distance: "+(long)minimumDistance+" ft");
+        ((TextView)findViewById(R.id.highDistance)).setText("Highest Distance Travelled: "+(long)highScores.getDistance()+" ft");
+        ((TextView)findViewById(R.id.highTime)).setText("Time of Highest Distance: "+highScores.getTime()/1000000+" s");
     }
 
     private boolean initializeDB(){
