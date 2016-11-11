@@ -125,8 +125,8 @@ public class HighScoresDataSource {
     public HighScores cursorToHighScore(Cursor cursor) {
         HighScores scores = new HighScores();
             scores.setId(cursor.getLong(0));//id
-            scores.setTime(cursor.getLong(2));//Time
-            scores.setDistance(cursor.getLong(3));//Distance
+            scores.setTime(cursor.getLong(1));//Time
+            scores.setDistance(cursor.getLong(2));//Distance
         return scores;
     }
 

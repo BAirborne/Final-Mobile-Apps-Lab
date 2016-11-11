@@ -48,7 +48,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         public void onLocationChanged(Location location) {
             if (mMap != null) {
                 marker.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(defaultPos));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(),location.getLongitude())));
             }
 
             if (finish != null) {
@@ -157,7 +157,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
-        locationManager.requestLocationUpdates(bestProvider, (long) 2000, 10f, locationListener);
+        locationManager.requestLocationUpdates(bestProvider, (long) 100, 4f, locationListener);
     }
 
     @Override
