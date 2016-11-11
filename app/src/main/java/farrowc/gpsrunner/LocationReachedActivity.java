@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
+
 import farrowc.gpsrunner.HighScore.HighScores;
 import farrowc.gpsrunner.HighScore.HighScoresDataSource;
 
@@ -41,11 +43,11 @@ public class LocationReachedActivity extends AppCompatActivity {
             highScores.setTime(timeElapsed);
             highScoresDataSource.updateHighScore(highScores);
         }
-
+        DecimalFormat numberFormat = new DecimalFormat("#.00");
         ((TextView)findViewById(R.id.timeElapsed)).setText("Time Taken: "+timeElapsed/1000000+" s");
-        ((TextView)findViewById(R.id.distanceTravelled)).setText("Distance Travelled: "+(long)distanceTravelled+" ft");
-        ((TextView)findViewById(R.id.minimumDistance)).setText("Minimum Distance: "+(long)minimumDistance+" ft");
-        ((TextView)findViewById(R.id.highDistance)).setText("Highest Distance Travelled: "+(long)highScores.getDistance()+" ft");
+        ((TextView)findViewById(R.id.distanceTravelled)).setText("Distance Travelled: "+numberFormat.format(distanceTravelled)+" ft");
+        ((TextView)findViewById(R.id.minimumDistance)).setText("Minimum Distance: "+numberFormat.format(minimumDistance)+" ft");
+        ((TextView)findViewById(R.id.highDistance)).setText("Highest Distance Travelled: "+numberFormat.format(highScores.getDistance())+" ft");
         ((TextView)findViewById(R.id.highTime)).setText("Time of Highest Distance: "+highScores.getTime()/1000000+" s");
     }
 

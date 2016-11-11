@@ -235,6 +235,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     finishMarker.setPosition(point);
                     finish.setLatitude(point.latitude);
                     finish.setLongitude(point.longitude);
+                    finish.setAltitude(locationManager.getLastKnownLocation(bestProvider).getAltitude());
+                    distanceToTravel = locationManager.getLastKnownLocation(bestProvider).distanceTo(finish);
+                    distanceTravelled = 0;
+                    startTime = System.nanoTime();
                 }
             }
         });
