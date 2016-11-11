@@ -1,6 +1,7 @@
 package farrowc.gpsrunner;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -11,8 +12,10 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -32,27 +35,33 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     Marker marker;
     LatLng defaultPos;
     Location finish;
+    Location lastLocation;
     Marker finishMarker;
+    double distanceToTravel;
+    double distanceTravelled;
+    long startTime;
 
     private String bestProvider = null;
 
     private final android.location.LocationListener locationListener = new android.location.LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
             if (mMap != null) {
                 marker.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(defaultPos));
             }
 
-
-            if(finish != null){
+            if (finish != null) {
                 finish.setAltitude(location.getAltitude());
-                Toast.makeText(MainActivity.this,""+location.distanceTo(finish),Toast.LENGTH_SHORT).show();
-                if(location.distanceTo(finish)<3){
-                    //TODO Won game stuff
-                    Toast.makeText(MainActivity.this,"You Won",Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "" + location.distanceTo(finish), Toast.LENGTH_SHORT).show();
+                distanceTravelled += lastLocation.distanceTo(location);
+                if (location.distanceTo(finish) < 10) {
+                    Intent intent = new Intent(MainActivity.this,LocationReachedActivity.class);
+                    intent.putExtra("MinimumDistance",distanceToTravel);
+                    intent.putExtra("DistanceTravelled",distanceTravelled);
+                    intent.putExtra("Time",(System.nanoTime()-startTime)/1000);
+                    //Toast.makeText(MainActivity.this, "You Won", Toast.LENGTH_SHORT).show();
+                    startActivity(intent);
                 }
             }
             // locationManager.removeUpdates(MapsActivity.this);
@@ -117,9 +126,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         //	Obtain	reference	to	location	provider
         List<String> providers = locationManager.getProviders(true);
         bestProvider = providers.get(1);
-        Log.d("Provider", bestProvider);
-        Location bestLocation = locationManager.getLastKnownLocation(bestProvider);
+        Location l = locationManager.getLastKnownLocation(bestProvider);
+        Location bestLocation = l;
+        lastLocation = l;
         locationManager.requestLocationUpdates(bestProvider, (long) 100, 4f, locationListener);
+
         if (bestLocation != null) {
             defaultPos = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
             Log.d("Location", "Using previous location");
@@ -128,8 +139,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             Log.d("Location", "Requesting new location");
         }
     }
-
-
 
 
     @Override
@@ -199,11 +208,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onMapClick(LatLng point) {
-                if(finishMarker==null) {
+                if (finishMarker == null) {
                     finishMarker = mMap.addMarker(new MarkerOptions().position(point).title("Finish"));
                     finish = new Location(bestProvider);
                     finish.setLatitude(point.latitude);
                     finish.setLongitude(point.longitude);
+
+                    if (ContextCompat.checkSelfPermission(MainActivity.this,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        // Should we show an explanation?
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                            String str = "Explanation needed: Please I need to determine your location";
+                            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
+                        } else {
+                            // No explanation needed, we can request the permission.
+                            ActivityCompat.requestPermissions(MainActivity.this,
+                                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                                    MY_PERMISSIONS_REQUEST_READ_LOCATION);
+                            String str = "No explanation needed: thanks.";
+                            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    finish.setAltitude(locationManager.getLastKnownLocation(bestProvider).getAltitude());
+                    distanceToTravel = locationManager.getLastKnownLocation(bestProvider).distanceTo(finish);
+                    distanceTravelled = 0;
+                    startTime = System.nanoTime();
                 }else{
                     finishMarker.setPosition(point);
                     finish.setLatitude(point.latitude);
