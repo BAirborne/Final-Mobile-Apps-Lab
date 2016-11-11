@@ -53,9 +53,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (finish != null) {
                 finish.setAltitude(location.getAltitude());
-                Toast.makeText(MainActivity.this, "" + location.distanceTo(finish), Toast.LENGTH_SHORT).show();
                 distanceTravelled += lastLocation.distanceTo(location);
                 if (location.distanceTo(finish) < 10) {
+                    finish = null;
+                    finishMarker.remove();
                     Intent intent = new Intent(MainActivity.this,LocationReachedActivity.class);
                     intent.putExtra("MinimumDistance",distanceToTravel);
                     intent.putExtra("DistanceTravelled",distanceTravelled);
@@ -69,20 +70,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-            String str = "status changed to " + status + "!";
-            Toast.makeText(MainActivity.this, provider + str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            String str = "Provider " + provider + " enabled!";
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            String str = "Provider " + provider + " disabled!";
-            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
     };
 
