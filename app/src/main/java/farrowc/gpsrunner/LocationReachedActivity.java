@@ -1,7 +1,9 @@
 package farrowc.gpsrunner;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
 import farrowc.gpsrunner.HighScore.HighScores;
@@ -56,5 +58,10 @@ public class LocationReachedActivity extends AppCompatActivity {
 //        datasource = new ItemDataSource(this);
 //        datasource.open();
         return (positiveDBConnections == 1);
+    }
+
+    public void backToMap(View v){
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
     }
 }
