@@ -1,6 +1,7 @@
 package farrowc.gpsrunner;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -34,7 +35,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     Marker marker;
     LatLng defaultPos;
     Location finish;
+    Location lastLocation;
     Marker finishMarker;
+    double distanceToTravel;
+    double distanceTravelled;
+    long startTime;
 
     private String bestProvider = null;
 
@@ -44,16 +49,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
             if (mMap != null) {
-                marker.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
+                marker.setPosition(new LatLng(location.getLatitude(), location.getLongitude()));
             }
 
 
-            if(finish != null){
+            if (finish != null) {
                 finish.setAltitude(location.getAltitude());
-                Toast.makeText(MainActivity.this,""+location.distanceTo(finish),Toast.LENGTH_SHORT).show();
-                if(location.distanceTo(finish)<3){
-                    //TODO Won game stuff
-                    Toast.makeText(MainActivity.this,"You Won",Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "" + location.distanceTo(finish), Toast.LENGTH_SHORT).show();
+                distanceTravelled += lastLocation.distanceTo(location);
+                if (location.distanceTo(finish) < 10) {
+                    Intent intent = new Intent(MainActivity.this,LocationReachedActivity.class);
+                    intent.putExtra("MinimumDistance",distanceToTravel);
+                    intent.putExtra("DistanceTravelled",distanceTravelled);
+                    intent.putExtra("Time",(System.nanoTime()-startTime)/1000);
+                    //Toast.makeText(MainActivity.this, "You Won", Toast.LENGTH_SHORT).show();
+                    startActivity(intent);
                 }
             }
             // locationManager.removeUpdates(MapsActivity.this);
@@ -102,6 +112,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         bestProvider = providers.get(1);
         Location l = locationManager.getLastKnownLocation(bestProvider);
         Location bestLocation = l;
+        Location lastLocation = l;
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -115,8 +126,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         locationManager.requestLocationUpdates(bestProvider, (long) 100, 4f, locationListener);
         defaultPos = new LatLng(bestLocation.getLatitude(), bestLocation.getLongitude());
     }
-
-
 
 
     @Override
@@ -185,11 +194,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onMapClick(LatLng point) {
-                if(finishMarker==null) {
+                if (finishMarker == null) {
                     finishMarker = mMap.addMarker(new MarkerOptions().position(point).title("Finish"));
                     finish = new Location(bestProvider);
                     finish.setLatitude(point.latitude);
                     finish.setLongitude(point.longitude);
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return;
+                    }
+                    finish.setAltitude(locationManager.getLastKnownLocation(bestProvider).getAltitude());
+                    distanceToTravel = locationManager.getLastKnownLocation(bestProvider).distanceTo(finish);
+                    distanceTravelled = 0;
+                    startTime = System.nanoTime();
                 }else{
                     finishMarker.setPosition(point);
                     finish.setLatitude(point.latitude);
