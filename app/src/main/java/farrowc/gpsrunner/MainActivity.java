@@ -9,9 +9,12 @@ import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -58,14 +61,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
+            String str = "status changed to " + status + "!";
+            Toast.makeText(MainActivity.this, provider + str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderEnabled(String provider) {
+            String str = "Provider " + provider + " enabled!";
+            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
+            String str = "Provider " + provider + " disabled!";
+            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -113,31 +122,45 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onResume() {
         super.onResume();
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            System.out.println("Incorrect Permissions");
-            return;
+        if (ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                String str = "Explanation needed: Please I need to determine your location";
+                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_READ_LOCATION);
+                String str = "No explanation needed: thanks.";
+                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            }
         }
-        locationManager.requestLocationUpdates(bestProvider, (long) 100, 2f, locationListener);
+
+        locationManager.requestLocationUpdates(bestProvider, (long) 2000, 10f, locationListener);
     }
 
     public void onPause() {
         super.onPause();
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+        if (ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                String str = "Explanation needed: Please I need to determine your location";
+                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_READ_LOCATION);
+                String str = "No explanation needed: thanks.";
+                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            }
         }
         locationManager.removeUpdates(locationListener);
     }
@@ -147,9 +170,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         mMap.setIndoorEnabled(true);
-        // Add a marker in Sydney and move the camera
+        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setTiltGesturesEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setZoomGesturesEnabled(true);
+        mMap.getUiSettings().setRotateGesturesEnabled(true);
 
-        marker = mMap.addMarker(new MarkerOptions().position(defaultPos).title("Player"));
+        if (defaultPos != null) {
+            marker = mMap.addMarker(new MarkerOptions().position(defaultPos).title("Player"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(defaultPos));
+        }
+
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
             @Override
